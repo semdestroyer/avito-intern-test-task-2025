@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/joho/godotenv"
 	"log"
+	"os"
 )
 
 func LoadConfig() *Config {
@@ -11,6 +12,10 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		//	os.Getenv(""),
+		DB_HOST:     os.Getenv("DB_HOST"),
+		DB_NAME:     os.Getenv("DB_HOST"),
+		DB_PORT:     os.Getenv("DB_HOST"),
+		DB_PASSWORD: os.Getenv("DB_HOST"),
+		DB_USERNAME: os.Getenv("DB_HOST"),
 	}
 }

@@ -1,6 +1,6 @@
-package entity
+package queries
 
-type TeamMember struct {
+type TeamMemberQuery struct {
 	userId   string
 	username string
 	isActive bool

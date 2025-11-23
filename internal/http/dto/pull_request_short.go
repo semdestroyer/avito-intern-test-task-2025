@@ -1,6 +1,6 @@
-package entity
+package dto
 
-type PullRequestShort struct {
+type PullRequestShortDTO struct {
 	PullRequestId   string
 	PullRequestName string
 	AuthorId        string

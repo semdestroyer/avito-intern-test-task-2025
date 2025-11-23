@@ -1,0 +1,23 @@
+version: 3.9
+
+services:
+  golang-back:
+    build: .
+    ports:
+      - ${APP_PORT}
+    environment:
+      - APP_ENV=production
+    depends_on:
+      - pg-db
+  pg-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "5432":${DB_PORT}
+    restart: always
+volumes:
+  pd-data:

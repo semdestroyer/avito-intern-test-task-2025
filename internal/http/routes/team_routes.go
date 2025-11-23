@@ -1,12 +1,12 @@
 package routes
 
 import (
+	"avito-intern-test-task-2025/internal/app"
 	"avito-intern-test-task-2025/internal/http/handlers"
-	"github.com/gin-gonic/gin"
 )
 
-func registerTeamRoutes(r *gin.RouterGroup) {
-	teamRoutes := r.Group("team/")
+func registerTeamRoutes(s *app.Server) {
+	teamRoutes := s.Router.Group("team/")
 	teamRoutes.GET("/get", handlers.TeamGet())
 	teamRoutes.POST("/add", handlers.TeamAdd())
 }

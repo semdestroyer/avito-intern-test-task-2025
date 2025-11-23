@@ -1,4 +1,4 @@
-package entity
+package queries
 
 type Status int
 
@@ -7,10 +7,10 @@ const (
 	MERGED
 )
 
-type PullRequest struct {
-	id                int
+type PullRequestQuery struct {
+	PullRequestId     string
 	PullRequestName   string
-	AuthorId          User
+	AuthorId          string
 	Status            Status
 	AssignedReviewers []User
 }

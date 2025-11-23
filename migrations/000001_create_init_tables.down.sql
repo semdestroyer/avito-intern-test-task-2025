@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS statuses;
+DROP TABLE IF EXISTS assigned_reviewers;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS pull_requests;

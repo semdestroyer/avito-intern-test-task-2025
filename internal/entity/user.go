@@ -1,8 +1,8 @@
 package entity
 
 type User struct {
-	userId   string
-	username string
-	teamname string
-	isActive bool
+	Id       int
+	Username string
+	IsActive bool
+	TeamName string
 }

@@ -2,6 +2,9 @@ package handlers
 
 import "github.com/gin-gonic/gin"
 
+type PrHandler struct {
+}
+
 func PullRequestsMerge() gin.HandlerFunc {
 	return func(c *gin.Context) {}
 }
