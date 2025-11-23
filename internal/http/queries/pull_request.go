@@ -12,5 +12,5 @@ type PullRequestQuery struct {
 	PullRequestName   string
 	AuthorId          string
 	Status            Status
-	AssignedReviewers []User
+	AssignedReviewers []UserQuery
 }

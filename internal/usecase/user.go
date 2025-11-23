@@ -14,6 +14,12 @@ type UserUsecase struct {
 	userRepo *repo.UserRepo
 }
 
+func NewUserUsecase(rp *repo.UserRepo) *UserUsecase {
+	return &UserUsecase{
+		userRepo: rp,
+	}
+}
+
 func (uc UserUsecase) UserSetIsActive(query *queries.UserQuery) dto.UserDTO {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

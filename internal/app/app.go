@@ -3,23 +3,19 @@ package app
 import (
 	"avito-intern-test-task-2025/internal/config"
 	"avito-intern-test-task-2025/internal/http/routes"
+	"avito-intern-test-task-2025/pkg/ServiceDependencies"
 	"avito-intern-test-task-2025/pkg/db"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 )
 
-type Server struct {
-	Router *gin.Engine
-	DB     *db.DB
-}
-
 func Run() {
 
 	c := config.LoadConfig()
 	db, err := db.InitDB(c)
 	r := gin.Default()
-	s := &Server{
+	s := &ServiceDependencies.ServiceDependencies{
 		Router: r,
 		DB:     db,
 	}

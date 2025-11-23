@@ -8,7 +8,7 @@ import (
 )
 
 type DB struct {
-	pool *pgxpool.Pool
+	Pool *pgxpool.Pool
 }
 
 func InitDB(cfg *config.Config) (*DB, error) {
@@ -18,9 +18,9 @@ func InitDB(cfg *config.Config) (*DB, error) {
 		log.Fatal("Unable to connect to database: %v\n", err)
 	}
 
-	return &DB{pool: pool}, err
+	return &DB{Pool: pool}, err
 }
 
 func (db *DB) Close() {
-	db.pool.Close()
+	db.Pool.Close()
 }

@@ -2,14 +2,20 @@ package repo
 
 import (
 	"avito-intern-test-task-2025/internal/entity"
+	"avito-intern-test-task-2025/pkg/db"
 	"context"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepo struct {
-	db *pgxpool.Pool
+	db *db.DB
+}
+
+func NewUserRepo(db *db.DB) *UserRepo {
+	return &UserRepo{
+		db: db,
+	}
 }
 
 func (r *UserRepo) UserSetIsActiveByID(ctx context.Context, id int, active bool) (*entity.User, error) {
@@ -21,7 +27,7 @@ func (r *UserRepo) UserSetIsActiveByID(ctx context.Context, id int, active bool)
 	}
 
 	var user entity.User
-	err = r.db.QueryRow(ctx, sql, args...).Scan(
+	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan(
 		&user.Id,
 		&user.Username,
 		&user.TeamName,

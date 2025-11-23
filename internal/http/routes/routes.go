@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"avito-intern-test-task-2025/internal/app"
 	"avito-intern-test-task-2025/internal/http/handlers"
+	"avito-intern-test-task-2025/pkg/ServiceDependencies"
 )
 
-func RegisterRoutes(s *app.Server) {
+func RegisterRoutes(s *ServiceDependencies.ServiceDependencies) {
 	v1 := s.Router.Group("/v1")
 	api := v1.Group("/api")
 	api.GET("/health", handlers.Health())

@@ -12,5 +12,5 @@ type PullRequestDTO struct {
 	PullRequestName   string
 	AuthorId          string
 	Status            Status
-	AssignedReviewers []User
+	AssignedReviewers []UserDTO
 }
