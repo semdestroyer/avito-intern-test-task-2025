@@ -31,7 +31,6 @@ func InitDB(cfg *config.Config) (*DB, error) {
 	return &DB{Pool: pool, dbUrl: dbUrl}, err
 }
 
-// TODO: провести обязательный рефакторинг этого места после того как сделаю базу. + пробросить пути и переместить migrations в корень
 func (db *DB) RunMigrations() {
 
 	driver, err := postgres.WithInstance(sql.OpenDB(stdlib.GetPoolConnector(db.Pool)), &postgres.Config{})

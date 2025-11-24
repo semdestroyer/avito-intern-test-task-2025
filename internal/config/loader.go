@@ -7,7 +7,7 @@ import (
 )
 
 func LoadConfig() *Config {
-	if err := godotenv.Load("../../.env"); err != nil { //TODO: сделать более красиво
+	if err := godotenv.Load("../../.env"); err != nil {
 		log.Fatal("No .env file found:", err)
 	}
 

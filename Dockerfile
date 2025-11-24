@@ -11,4 +11,6 @@ FROM debian:bookworm-slim
 
 WORKDIR /root
 COPY --from=builder /app/app .
+COPY --from=builder /app/example.env .env
+#TODO: проследить, что копируется энв норм
 CMD ["./app"]
