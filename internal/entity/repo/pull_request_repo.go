@@ -79,18 +79,28 @@ func (r *PrRepo) MarkAsMerged(ctx context.Context, id int) (*entity.PullRequest,
 	return &pr, nil
 }
 
-func (r *PrRepo) Reassign(ctx context.Context, id int) (*entity.PullRequest, error) {
-	query := sq.
-	//TODO: подумать над timestamp merged_at
+func (r *PrRepo) Reassign(ctx context.Context, oldUserId int, newUserId, prId int) (*entity.PullRequest, error) {
+	query := sq.Update("assigned_reviewers").Set("reviewer_id", newUserId).Where(sq.Eq{"pull_request_id": prId, "reviewer_id": oldUserId}).
+		PlaceholderFormat(sq.Dollar)
 	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	var pr entity.PullRequest
-	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan(
+	query = sq.Select("id, pull_request_name, author_id, status_id").From("pull_requests").Where(sq.Eq{"id": prId}).PlaceholderFormat(sq.Dollar)
+	sql, args, err = query.ToSql()
+	if err != nil {
+		return nil, err
+	}
 
-	)
+	query = sq.Select("id, pull_request_name, author_id, status_id").From("pull_requests").Where(sq.Eq{"id": prId}).PlaceholderFormat(sq.Dollar)
+	sql, args, err = query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	var pr entity.PullRequest
+	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan()
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -102,18 +112,16 @@ func (r *PrRepo) Reassign(ctx context.Context, id int) (*entity.PullRequest, err
 	return &pr, nil
 }
 
-func (r *PrRepo) Create(ctx context.Context, id int) (*entity.PullRequest, error) {
-	query := sq.
-		//TODO: подумать над timestamp merged_at
-		sql, args, err := query.ToSql()
+func (r *PrRepo) Create(ctx context.Context, pr *entity.PullRequest) (*entity.PullRequest, error) {
+	query := sq.Insert().Into("pull_requests")
+
+	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
 	var pr entity.PullRequest
-	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan(
-
-	)
+	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan()
 
 	if err != nil {
 		if err == pgx.ErrNoRows {

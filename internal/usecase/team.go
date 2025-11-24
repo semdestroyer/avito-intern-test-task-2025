@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"avito-intern-test-task-2025/internal/entity"
 	"avito-intern-test-task-2025/internal/entity/repo"
 	"avito-intern-test-task-2025/internal/http/dto"
 	"avito-intern-test-task-2025/internal/http/queries"
@@ -26,35 +27,73 @@ func (tc TeamUsecase) GetTeamMembersByName(query *queries.TeamNameQuery) dto.Tea
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	u, err := tc.userRepo.GetMembersByTeamName(ctx, query.TeamName)
+	users, err := tc.userRepo.GetMembersByTeamName(ctx, query.TeamName)
 
 	if err != nil {
 		log.Fatal("user service failed: ", err)
 	}
 
+	udto := make([]dto.TeamMemberDTO, 0)
+	for _, u := range users {
+		member := dto.TeamMemberDTO{
+			UserId:   string(rune(u.Id)),
+			Username: u.Username,
+			IsActive: u.IsActive,
+		}
+		udto = append(udto, member)
+	}
+
 	return dto.TeamDTO{
-		UserId:   strconv.Itoa(u.Id),
-		Username: u.Username,
-		TeamName: u.TeamName,
-		IsActive: u.IsActive,
+		Name:    query.TeamName,
+		Members: udto,
 	}
 }
 
-func (tc TeamUsecase) AddTeam() dto.TeamDTO {
+func (tc TeamUsecase) AddTeam(teamDTO dto.TeamDTO) dto.TeamDTO {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	userId, err := strconv.Atoi(query.TeamName)
-	u, err := tc.userRepo.GetMembersByTeamName()
+	members := make([]entity.User, 0)
+
+	for _, member := range teamDTO.Members {
+
+		id, err := strconv.Atoi("member.UserId")
+		if err != nil {
+			log.Fatal("error during conv")
+		}
+
+		user := entity.User{
+			Id:       id,
+			Username: member.Username,
+		}
+
+		members = append(members, user)
+	}
+
+	team := entity.Team{
+		Name:    teamDTO.Name,
+		Members: members,
+	}
+	t, err := tc.teamRepo.CreateTeam(ctx, &team)
 
 	if err != nil {
 		log.Fatal("user service failed: ", err)
 	}
 
+	membersDto := make([]dto.TeamMemberDTO, 0)
+
+	for _, member := range t.Members {
+		user := dto.TeamMemberDTO{
+			UserId:   string(rune(member.Id)),
+			Username: member.Username,
+			IsActive: member.IsActive,
+		}
+
+		membersDto = append(membersDto, user)
+	}
+
 	return dto.TeamDTO{
-		UserId:   strconv.Itoa(u.Id),
-		Username: u.Username,
-		TeamName: u.TeamName,
-		IsActive: u.IsActive,
+		Name:    t.Name,
+		Members: membersDto,
 	}
 }

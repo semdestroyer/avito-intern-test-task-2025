@@ -44,7 +44,7 @@ func (th TeamHandler) TeamAdd() gin.HandlerFunc {
 			return
 		}
 
-		r := th.service.AddTeam(&td)
+		r := th.service.AddTeam(td)
 		c.JSON(http.StatusOK, r)
 	}
 }
