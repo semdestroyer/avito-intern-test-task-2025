@@ -35,9 +35,7 @@ func (ph PrHandler) PullRequestsMerge() gin.HandlerFunc {
 			return
 		}
 
-		c.ShouldBindQuery(&q)
-
-		r := ph.service.Merge(&q)
+		r := ph.service.Merge(pr)
 		c.JSON(http.StatusOK, r)
 	}
 }
@@ -60,9 +58,7 @@ func (ph PrHandler) PullRequestsCreate() gin.HandlerFunc {
 			return
 		}
 
-		c.ShouldBindQuery(&q)
-
-		r := ph.service.Create(&q)
+		r := ph.service.Create(pr)
 		c.JSON(http.StatusOK, r)
 	}
 }
@@ -70,7 +66,7 @@ func (ph PrHandler) PullRequestsCreate() gin.HandlerFunc {
 func (ph PrHandler) PullRequestsReassign() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var pr dto.PullRequestDTO
+		var pr dto.PullRequestReassignDTO
 		if err := c.BindJSON(&pr); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
@@ -85,9 +81,7 @@ func (ph PrHandler) PullRequestsReassign() gin.HandlerFunc {
 			return
 		}
 
-		c.ShouldBindQuery(&q)
-
-		r := ph.service.Reassign(&q)
+		r := ph.service.Reassign(pr)
 		c.JSON(http.StatusOK, r)
 	}
 }

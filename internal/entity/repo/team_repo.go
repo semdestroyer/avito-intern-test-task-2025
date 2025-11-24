@@ -21,12 +21,6 @@ func NewTeamRepo(db *db.DB) *TeamRepo {
 func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.Team, error) {
 	query := sq.Insert("teams(Name)").Values(team.Name)
 
-	for _, member := range team.Members {
-		query := sq.Update("users").Set("team_name", team.Name).Where(sq.Eq{"id": member.Id}).
-			Suffix("RETURNING id, pull_request_name, author_id, status, assigned_reviewers").
-			PlaceholderFormat(sq.Dollar)
-	}
-
 	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
@@ -41,6 +35,26 @@ func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.T
 		&pr.AssignedReviewers,
 	)
 
+	members := make([]entity.User, 0)
+	for _, member := range team.Members {
+		m := entity.User{}
+		queryUsers := sq.Update("users").Set("team_name", team.Name).Where(sq.Eq{"id": member.Id}).
+			Suffix("RETURNING id, is_active, username, team_name").
+			PlaceholderFormat(sq.Dollar)
+		sql, args, err := queryUsers.ToSql()
+		err = tr.db.Pool.QueryRow(ctx, sql, args...).Scan(
+			&m.Id,
+			&m.IsActive,
+			&m.Username,
+			&m.TeamName,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		members = append(members)
+	}
+
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			//return nil //,ErrUserNotFound
@@ -48,5 +62,8 @@ func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.T
 		return nil, err
 	}
 
-	return &pr, nil
+	return &entity.Team{
+		Name:    team.Name,
+		Members: members,
+	}, nil
 }

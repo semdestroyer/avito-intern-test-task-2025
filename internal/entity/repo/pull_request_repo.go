@@ -87,14 +87,14 @@ func (r *PrRepo) Reassign(ctx context.Context, oldUserId int, newUserId, prId in
 		return nil, err
 	}
 
-	query = sq.Select("id, pull_request_name, author_id, status_id").From("pull_requests").Where(sq.Eq{"id": prId}).PlaceholderFormat(sq.Dollar)
-	sql, args, err = query.ToSql()
+	query2 := sq.Select("id, pull_request_name, author_id, status_id").From("pull_requests").Where(sq.Eq{"id": prId}).PlaceholderFormat(sq.Dollar)
+	sql, args, err = query2.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	query = sq.Select("id, pull_request_name, author_id, status_id").From("pull_requests").Where(sq.Eq{"id": prId}).PlaceholderFormat(sq.Dollar)
-	sql, args, err = query.ToSql()
+	query3 := sq.Select("id, pull_request_name, author_id, status_id").From("pull_requests").Where(sq.Eq{"id": prId}).PlaceholderFormat(sq.Dollar)
+	sql, args, err = query3.ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +113,14 @@ func (r *PrRepo) Reassign(ctx context.Context, oldUserId int, newUserId, prId in
 }
 
 func (r *PrRepo) Create(ctx context.Context, pr *entity.PullRequest) (*entity.PullRequest, error) {
-	query := sq.Insert().Into("pull_requests")
+	query := sq.Insert("").Values("", pr.Id, pr.Status, pr.AuthorId, pr.AssignedReviewers).Into("pull_requests")
 
 	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	var pr entity.PullRequest
+	var rpr entity.PullRequest
 	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan()
 
 	if err != nil {
@@ -130,5 +130,5 @@ func (r *PrRepo) Create(ctx context.Context, pr *entity.PullRequest) (*entity.Pu
 		return nil, err
 	}
 
-	return &pr, nil
+	return &rpr, nil
 }
