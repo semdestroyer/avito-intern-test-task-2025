@@ -6,3 +6,8 @@ type UserDTO struct {
 	TeamName string
 	IsActive bool
 }
+
+type UserPrsDTO struct {
+	UserId       string
+	PullRequests []PullRequestShortDTO
+}

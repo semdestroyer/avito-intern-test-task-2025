@@ -4,6 +4,7 @@ import (
 	"avito-intern-test-task-2025/internal/entity"
 	"avito-intern-test-task-2025/pkg/db"
 	"context"
+	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 )
@@ -19,7 +20,33 @@ func NewUserRepo(db *db.DB) *UserRepo {
 }
 
 func (r *UserRepo) UserSetIsActiveByID(ctx context.Context, id int, active bool) (*entity.User, error) {
-	query := sq.Update("users").Set("is_active", active).Where(sq.Eq{"id": id}).PlaceholderFormat(sq.Dollar)
+	query := sq.Update("users").Set("is_active", active).Where(sq.Eq{"id": id}).Suffix("RETURNING id, is_active, team_name, username").PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(sql, args)
+	var user entity.User
+	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan(
+		&user.Id,
+		&user.IsActive,
+		&user.TeamName,
+		&user.Username,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			//return nil //,ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepo) GetMembersByTeamName(ctx context.Context, teamname string) (*[]entity.User, error) {
+	query := sq.Select("id, username, is_active").Where(sq.Eq{"teamname": teamname}).
+		PlaceholderFormat(sq.Dollar)
 
 	sql, args, err := query.ToSql()
 	if err != nil {
@@ -29,9 +56,9 @@ func (r *UserRepo) UserSetIsActiveByID(ctx context.Context, id int, active bool)
 	var user entity.User
 	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan(
 		&user.Id,
-		&user.Username,
-		&user.TeamName,
 		&user.IsActive,
+		&user.TeamName,
+		&user.Username,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {

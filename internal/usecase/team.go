@@ -10,24 +10,23 @@ import (
 	"time"
 )
 
-type UserUsecase struct {
+type TeamUsecase struct {
+	teamRepo *repo.TeamRepo
 	userRepo *repo.UserRepo
-	prRepo   *repo.PrRepo
 }
 
-func NewUserUsecase(rp *repo.UserRepo, pr *repo.PrRepo) *UserUsecase {
-	return &UserUsecase{
-		userRepo: rp,
-		prRepo:   pr,
+func NewTeamUsecase(tr *repo.TeamRepo, ur *repo.UserRepo) *TeamUsecase {
+	return &TeamUsecase{
+		teamRepo: tr,
+		userRepo: ur,
 	}
 }
 
-func (uc UserUsecase) UserSetIsActive(query *queries.UserIsActiveQuery) dto.UserDTO {
+func (tc TeamUsecase) GetTeamMembersByName(query *queries.TeamNameQuery) dto.TeamDTO {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	userId, err := strconv.Atoi(query.UserId)
-	u, err := uc.userRepo.UserSetIsActiveByID(ctx, userId, query.IsActive)
+	u, err := tc.userRepo.GetMembersByTeamName(ctx, query.TeamName)
 
 	if err != nil {
 		log.Fatal("user service failed: ", err)
@@ -41,19 +40,21 @@ func (uc UserUsecase) UserSetIsActive(query *queries.UserIsActiveQuery) dto.User
 	}
 }
 
-func (uc UserUsecase) UserGetReviews(query *queries.UserIdQuery) dto.UserDTO {
+func (tc TeamUsecase) AddTeam() dto.TeamDTO {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	userId, err := strconv.Atoi(query.UserId)
-	prs, err := uc.prRepo.GetPRsByUser(ctx, userId)
+	userId, err := strconv.Atoi(query.TeamName)
+	u, err := tc.userRepo.GetMembersByTeamName()
 
 	if err != nil {
 		log.Fatal("user service failed: ", err)
 	}
 
-	return dto.UserPrsDTO{
-		UserId:       query.UserId,
-		PullRequests: prs,
+	return dto.UserDTO{
+		UserId:   strconv.Itoa(u.Id),
+		Username: u.Username,
+		TeamName: u.TeamName,
+		IsActive: u.IsActive,
 	}
 }

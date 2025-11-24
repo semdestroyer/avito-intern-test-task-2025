@@ -4,9 +4,8 @@ import (
 	"avito-intern-test-task-2025/internal/http/queries"
 	"avito-intern-test-task-2025/internal/usecase"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"log"
 	"net/http"
+	"strconv"
 )
 
 type UserHandler struct {
@@ -21,23 +20,46 @@ func NewUserHandler(userUsecase *usecase.UserUsecase) *UserHandler {
 
 func (h UserHandler) UserSetIsActive() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var q queries.UserQuery
-		if err := c.ShouldBindQuery(&q); err != nil {
+
+		if !c.Request.URL.Query().Has("is_active") {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "incorrect query",
+				"message": "missing required param is_active",
 			})
+			return
 		}
-		validate := validator.New() //TODO: вынести или выообще не использовать
-		err := validate.Struct(q)
-		if err != nil {
-			// Обработка ошибок валидации
-			log.Fatal("Validation failed:", err)
+		if _, err := strconv.ParseBool(c.Request.URL.Query().Get("is_active")); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "is_active is not bool",
+			})
+			return
 		}
+
+		if !c.Request.URL.Query().Has("user_id") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "missing required param user_id",
+			})
+			return
+		}
+		var q queries.UserIsActiveQuery
+		c.ShouldBindQuery(&q)
+
 		r := h.service.UserSetIsActive(&q)
 		c.JSON(http.StatusOK, r)
 	}
 }
 
-func UserGetReview() gin.HandlerFunc {
-	return func(c *gin.Context) {}
+func (h UserHandler) UserGetReview() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !c.Request.URL.Query().Has("user_id") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "missing required param user_id",
+			})
+			return
+		}
+		var q queries.UserIdQuery
+		c.ShouldBindQuery(&q)
+
+		r := h.service.UserGetReviews(&q)
+		c.JSON(http.StatusOK, r)
+	}
 }
