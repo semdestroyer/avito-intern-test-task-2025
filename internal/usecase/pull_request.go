@@ -11,3 +11,15 @@ func NewPullRequestUsecase(rp *repo.UserRepo, pr *repo.PrRepo) *PullRequestUseca
 		prRepo: pr,
 	}
 }
+
+func (pr PullRequestUsecase) Create() {
+	pr.prRepo.Create()
+}
+
+func (pr PullRequestUsecase) Reassign() {
+	pr.prRepo.Reassign()
+}
+
+func (pr PullRequestUsecase) Merge() {
+	pr.prRepo.MarkAsMerged()
+}

@@ -32,7 +32,7 @@ func (tc TeamUsecase) GetTeamMembersByName(query *queries.TeamNameQuery) dto.Tea
 		log.Fatal("user service failed: ", err)
 	}
 
-	return dto.UserDTO{
+	return dto.TeamDTO{
 		UserId:   strconv.Itoa(u.Id),
 		Username: u.Username,
 		TeamName: u.TeamName,
@@ -51,7 +51,7 @@ func (tc TeamUsecase) AddTeam() dto.TeamDTO {
 		log.Fatal("user service failed: ", err)
 	}
 
-	return dto.UserDTO{
+	return dto.TeamDTO{
 		UserId:   strconv.Itoa(u.Id),
 		Username: u.Username,
 		TeamName: u.TeamName,

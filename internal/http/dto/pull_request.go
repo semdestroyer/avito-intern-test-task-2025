@@ -8,9 +8,9 @@ const (
 )
 
 type PullRequestDTO struct {
-	PullRequestId     string
-	PullRequestName   string
-	AuthorId          string
-	Status            Status
+	PullRequestId     string `json: ""`
+	PullRequestName   string `json: ""`
+	AuthorId          string `json: ""`
+	Status            Status `json: ""`
 	AssignedReviewers []UserDTO
 }

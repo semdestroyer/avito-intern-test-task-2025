@@ -4,7 +4,6 @@ import (
 	"avito-intern-test-task-2025/internal/entity"
 	"avito-intern-test-task-2025/pkg/db"
 	"context"
-	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 )
@@ -26,7 +25,7 @@ func (r *UserRepo) UserSetIsActiveByID(ctx context.Context, id int, active bool)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(sql, args)
+
 	var user entity.User
 	err = r.db.Pool.QueryRow(ctx, sql, args...).Scan(
 		&user.Id,

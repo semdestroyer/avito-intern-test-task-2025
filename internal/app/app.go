@@ -20,7 +20,6 @@ func Run() {
 	database.RunMigrations()
 	r := gin.Default()
 	s := &ServiceDependencies.ServiceDependencies{
-		//TODO: подумать нужно ли оставить всю структуру в целом. это может быть полезно чтобы тащить из pkg но пока у нас лишь db
 		DB: database,
 	}
 
@@ -28,12 +27,20 @@ func Run() {
 	api := v1.Group("/api")
 	api.GET("/health", handlers.Health())
 
+	tr := repo.NewTeamRepo(s.DB)
+	pr := repo.NewPrRepo(s.DB)
 	ur := repo.NewUserRepo(s.DB)
-	uc := usecase.NewUserUsecase(ur)
+	uc := usecase.NewUserUsecase(ur, pr)
+	tc := usecase.NewTeamUsecase(tr, ur)
+	pc := usecase.NewPullRequestUsecase(ur, pr)
 	uh := handlers.NewUserHandler(uc)
-	router.RegisterUserRoutes(r, uh)
+	th := handlers.NewTeamHandler(tc)
+	ph := handlers.NewPrHandler(pc)
 
-	//Остальные пути потом
+	router.RegisterUserRoutes(r, uh)
+	router.RegisterTeamRoutes(r, th)
+	router.RegisterPullRequestRoutes(r, ph)
+
 	err = r.Run()
 	if err != nil {
 		log.Fatal(err)

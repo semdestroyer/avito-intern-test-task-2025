@@ -39,23 +39,14 @@ func (db *DB) RunMigrations() {
 		log.Fatalf("Failed to initialize migrate driver: %v", err)
 	}
 
-	//migrationsPath := "file://" + absPath
-	//m, err := migrate.NewWithDatabaseInstance(
-	//	migrationsPath,
-	//	"postgres",
-	//	driver,
-	//)
-
-	windowsPath := "D:\\GolangProjects\\avito-intern-test-task-2025\\pkg\\db\\migrations"
-
-	// Get absolute path
-	absPath, err := filepath.Abs(windowsPath)
+	//migrationsRelPath := "D:\\GolangProjects\\avito-intern-test-task-2025\\pkg\\db\\migrations"
+	migrationsRelPath := "./migrations"
+	absPath, err := filepath.Abs(migrationsRelPath)
 	if err != nil {
 		fmt.Println("Error getting absolute path:", err)
 		return
 	}
 
-	// Convert backslashes to forward slashes for URL
 	urlPath := filepath.ToSlash(absPath)
 
 	m, err := migrate.NewWithDatabaseInstance("file://"+urlPath, "postgres", driver)
@@ -63,12 +54,6 @@ func (db *DB) RunMigrations() {
 		log.Fatalf("Migration setup failed: %v", err)
 	}
 
-	//m, err := migrate.New("file://"+urlPath, db.dbUrl)
-	//if err != nil {
-	//	log.Fatalf("Migration setup failed: %v", err)
-	//}
-
-	// 5. Накатываем миграции
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalf("Migration failed: %v", err)

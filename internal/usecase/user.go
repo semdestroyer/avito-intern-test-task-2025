@@ -41,7 +41,7 @@ func (uc UserUsecase) UserSetIsActive(query *queries.UserIsActiveQuery) dto.User
 	}
 }
 
-func (uc UserUsecase) UserGetReviews(query *queries.UserIdQuery) dto.UserDTO {
+func (uc UserUsecase) UserGetReviews(query *queries.UserIdQuery) dto.UserPrsDTO {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -51,9 +51,17 @@ func (uc UserUsecase) UserGetReviews(query *queries.UserIdQuery) dto.UserDTO {
 	if err != nil {
 		log.Fatal("user service failed: ", err)
 	}
-
+	prDtos := make([]dto.PullRequestShortDTO, 0)
+	for _, pr := range prs {
+		prDtos = append(prDtos, dto.PullRequestShortDTO{
+			PullRequestId:   string(rune(pr.Id)),
+			AuthorId:        string(rune(pr.AuthorId.Id)),
+			Status:          dto.Status(pr.Status),
+			PullRequestName: pr.PullRequestName,
+		})
+	}
 	return dto.UserPrsDTO{
 		UserId:       query.UserId,
-		PullRequests: prs,
+		PullRequests: prDtos,
 	}
 }
