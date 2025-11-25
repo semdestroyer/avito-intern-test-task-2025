@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 
@@ -41,7 +42,21 @@ func (db *DB) RunMigrations() {
 
 	_, filename, _, _ := runtime.Caller(0)
 	migrationsPath := filepath.Join(filepath.Dir(filename), "migrations")
-	
+
+	// If migrations path doesn't exist (e.g., inside docker image), fall back to ./pkg/db/migrations
+	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
+		if cwd, cwdErr := os.Getwd(); cwdErr == nil {
+			altPath := filepath.Join(cwd, "pkg", "db", "migrations")
+			if _, altErr := os.Stat(altPath); altErr == nil {
+				migrationsPath = altPath
+			} else {
+				log.Fatalf("Migrations directory not found (checked %s and %s)", migrationsPath, altPath)
+			}
+		} else {
+			log.Fatalf("Unable to determine working directory for migrations: %v", cwdErr)
+		}
+	}
+
 	migrationsURL := "file://" + filepath.ToSlash(migrationsPath)
 
 	m, err := migrate.NewWithDatabaseInstance(migrationsURL, "postgres", driver)
