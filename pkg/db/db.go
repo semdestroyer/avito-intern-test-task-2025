@@ -43,7 +43,6 @@ func (db *DB) RunMigrations() {
 	_, filename, _, _ := runtime.Caller(0)
 	migrationsPath := filepath.Join(filepath.Dir(filename), "migrations")
 
-	// If migrations path doesn't exist (e.g., inside docker image), fall back to ./pkg/db/migrations
 	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
 		if cwd, cwdErr := os.Getwd(); cwdErr == nil {
 			altPath := filepath.Join(cwd, "pkg", "db", "migrations")

@@ -11,9 +11,9 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /root
+WORKDIR /app
 
-COPY --from=builder /app/app .
+COPY --from=builder /app/app ./app
 COPY --from=builder /app/pkg/db/migrations ./pkg/db/migrations
 COPY --from=builder /app/example.env .env
 
