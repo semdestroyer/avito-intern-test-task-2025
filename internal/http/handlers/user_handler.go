@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"avito-intern-test-task-2025/internal/http/dto"
+	"avito-intern-test-task-2025/internal/http/errors"
 	"avito-intern-test-task-2025/internal/http/queries"
 	"avito-intern-test-task-2025/internal/usecase"
-	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
@@ -20,46 +22,39 @@ func NewUserHandler(userUsecase *usecase.UserUsecase) *UserHandler {
 
 func (h UserHandler) UserSetIsActive() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		if !c.Request.URL.Query().Has("is_active") {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "missing required param is_active",
-			})
-			return
-		}
-		if _, err := strconv.ParseBool(c.Request.URL.Query().Get("is_active")); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "is_active is not bool",
-			})
+		var dto dto.UserIsActiveDTO
+		if err := c.ShouldBindJSON(&dto); err != nil {
+			errors.RespondWithError(c, http.StatusBadRequest, errors.InvalidInputError("Invalid JSON: "+err.Error()))
 			return
 		}
 
-		if !c.Request.URL.Query().Has("user_id") {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "missing required param user_id",
-			})
+		query := queries.UserIsActiveQuery{
+			UserId:   dto.UserId,
+			IsActive: dto.IsActive,
+		}
+
+		r, err := h.service.UserSetIsActive(&query)
+		if err != nil {
+			errors.RespondWithError(c, http.StatusNotFound, errors.NotFoundError("User not found"))
 			return
 		}
-		var q queries.UserIsActiveQuery
-		c.ShouldBindQuery(&q)
-
-		r := h.service.UserSetIsActive(&q)
-		c.JSON(http.StatusOK, r)
+		c.JSON(http.StatusOK, gin.H{"user": r})
 	}
 }
 
 func (h UserHandler) UserGetReview() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !c.Request.URL.Query().Has("user_id") {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "missing required param user_id",
-			})
+		var q queries.UserIdQuery
+		if err := c.ShouldBindQuery(&q); err != nil {
+			errors.RespondWithError(c, http.StatusBadRequest, errors.InvalidInputError("Invalid query parameters: "+err.Error()))
 			return
 		}
-		var q queries.UserIdQuery
-		c.ShouldBindQuery(&q)
 
-		r := h.service.UserGetReviews(&q)
+		r, err := h.service.UserGetReviews(&q)
+		if err != nil {
+			errors.RespondWithError(c, http.StatusNotFound, errors.NotFoundError("User not found"))
+			return
+		}
 		c.JSON(http.StatusOK, r)
 	}
 }

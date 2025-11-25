@@ -4,14 +4,15 @@ import (
 	"avito-intern-test-task-2025/internal/config"
 	"context"
 	"database/sql"
-	"fmt"
+	"log"
+	"path/filepath"
+	"runtime"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"log"
-	"path/filepath"
 )
 
 type DB struct {
@@ -38,17 +39,12 @@ func (db *DB) RunMigrations() {
 		log.Fatalf("Failed to initialize migrate driver: %v", err)
 	}
 
-	//migrationsRelPath := "D:\\GolangProjects\\avito-intern-test-task-2025\\pkg\\db\\migrations"
-	migrationsRelPath := "./migrations"
-	absPath, err := filepath.Abs(migrationsRelPath)
-	if err != nil {
-		fmt.Println("Error getting absolute path:", err)
-		return
-	}
+	_, filename, _, _ := runtime.Caller(0)
+	migrationsPath := filepath.Join(filepath.Dir(filename), "migrations")
+	
+	migrationsURL := "file://" + filepath.ToSlash(migrationsPath)
 
-	urlPath := filepath.ToSlash(absPath)
-
-	m, err := migrate.NewWithDatabaseInstance("file://"+urlPath, "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance(migrationsURL, "postgres", driver)
 	if err != nil {
 		log.Fatalf("Migration setup failed: %v", err)
 	}

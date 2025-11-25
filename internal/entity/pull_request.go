@@ -8,7 +8,7 @@ const (
 )
 
 type PullRequest struct {
-	Id                int
+	Id                string
 	PullRequestName   string
 	AuthorId          User
 	Status            Status

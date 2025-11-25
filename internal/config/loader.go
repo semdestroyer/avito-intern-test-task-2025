@@ -1,21 +1,37 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func LoadConfig() *Config {
-	if err := godotenv.Load("../../.env"); err != nil {
-		log.Fatal("No .env file found:", err)
+	err := godotenv.Load(".env")
+	if err != nil {
+		err = godotenv.Load("../.env")
+		if err != nil {
+			err = godotenv.Load("../../.env")
+			if err != nil {
+				log.Println("No .env file found, using default values or environment variables")
+			}
+		}
 	}
 
 	return &Config{
-		DB_HOST:     os.Getenv("DB_HOST"),
-		DB_NAME:     os.Getenv("DB_NAME"),
-		DB_PORT:     os.Getenv("DB_PORT"),
-		DB_PASSWORD: os.Getenv("DB_PASSWORD"),
-		DB_USER:     os.Getenv("DB_USER"),
+		DB_HOST:     getEnvOrDefault("DB_HOST", "localhost"),
+		DB_NAME:     getEnvOrDefault("DB_NAME", "postgres"),
+		DB_PORT:     getEnvOrDefault("DB_PORT", "5432"),
+		DB_PASSWORD: getEnvOrDefault("DB_PASSWORD", "postgres"),
+		DB_USER:     getEnvOrDefault("DB_USER", "postgres"),
 	}
+}
+
+func getEnvOrDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

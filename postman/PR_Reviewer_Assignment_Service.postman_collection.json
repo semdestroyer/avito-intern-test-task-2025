@@ -1,0 +1,251 @@
+{
+	"info": {
+		"_postman_id": "12345678-1234-1234-1234-123456789012",
+		"name": "PR Reviewer Assignment Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Collection for testing the PR Reviewer Assignment Service API"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Team",
+			"item": [
+				{
+					"name": "Create Team",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"team_name\": \"payments\",\n  \"members\": [\n    {\n      \"user_id\": \"u1\",\n      \"username\": \"Alice\",\n      \"is_active\": true\n    },\n    {\n      \"user_id\": \"u2\",\n      \"username\": \"Bob\",\n      \"is_active\": true\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/team/add",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"team",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Team",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/team/get?team_name=backend",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"team",
+								"get"
+							],
+							"query": [
+								{
+									"key": "team_name",
+									"value": "backend"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Set User Active Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"u2\",\n  \"is_active\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/setIsActive",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"setIsActive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/getReview?user_id=u2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"getReview"
+							],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "u2"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pull Requests",
+			"item": [
+				{
+					"name": "Create Pull Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pull_request_id\": \"pr-2001\",\n  \"pull_request_name\": \"Add search functionality\",\n  \"author_id\": \"u1\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pullRequest/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pullRequest",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Merge Pull Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pull_request_id\": \"pr-1001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pullRequest/merge",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pullRequest",
+								"merge"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reassign Pull Request Reviewer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pull_request_id\": \"pr-1001\",\n  \"old_user_id\": \"u2\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pullRequest/reassign",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pullRequest",
+								"reassign"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080"
+		}
+	]
+}

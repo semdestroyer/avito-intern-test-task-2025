@@ -9,8 +9,9 @@ import (
 	"avito-intern-test-task-2025/pkg/ServiceDependencies"
 	"avito-intern-test-task-2025/pkg/db"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Run() {
@@ -28,8 +29,8 @@ func Run() {
 	api.GET("/health", handlers.Health())
 
 	tr := repo.NewTeamRepo(s.DB)
-	pr := repo.NewPrRepo(s.DB)
 	ur := repo.NewUserRepo(s.DB)
+	pr := repo.NewPrRepo(s.DB, ur)
 	uc := usecase.NewUserUsecase(ur, pr)
 	tc := usecase.NewTeamUsecase(tr, ur)
 	pc := usecase.NewPullRequestUsecase(ur, pr)

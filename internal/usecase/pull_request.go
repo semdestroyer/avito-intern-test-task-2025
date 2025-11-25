@@ -5,9 +5,11 @@ import (
 	"avito-intern-test-task-2025/internal/entity/repo"
 	"avito-intern-test-task-2025/internal/http/dto"
 	"context"
-	"log"
-	"strconv"
+	"errors"
+	"math/rand"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type PullRequestUsecase struct {
@@ -22,15 +24,24 @@ func NewPullRequestUsecase(up *repo.UserRepo, pr *repo.PrRepo) *PullRequestUseca
 	}
 }
 
-func (pc PullRequestUsecase) Create(prDTO dto.PullRequestDTO) dto.PullRequestDTO {
+func (pc PullRequestUsecase) Create(prDTO dto.PullRequestDTO) (dto.PullRequestDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	id, err := strconv.Atoi(prDTO.AuthorId)
-	if err != nil {
-		log.Fatal(err.Error())
+
+	if prDTO.PullRequestId != "" {
+		existingPr, _ := pc.prRepo.GetByID(ctx, prDTO.PullRequestId)
+		if existingPr != nil {
+			return dto.PullRequestDTO{}, errors.New("PR_EXISTS")
+		}
 	}
-	user, err := pc.userRepo.GetUserById(ctx, id)
+
+	user, err := pc.userRepo.GetUserById(ctx, prDTO.AuthorId)
+	if err != nil {
+		return dto.PullRequestDTO{}, errors.New("AUTHOR_NOT_FOUND")
+	}
+
 	pr := entity.PullRequest{
+		Id:              prDTO.PullRequestId,
 		PullRequestName: prDTO.PullRequestName,
 		AuthorId: entity.User{
 			Id:       user.Id,
@@ -38,107 +49,200 @@ func (pc PullRequestUsecase) Create(prDTO dto.PullRequestDTO) dto.PullRequestDTO
 			IsActive: user.IsActive,
 			TeamName: user.TeamName,
 		},
-		Status: entity.OPEN, //TODO: уточнить этот момент по спеке типа может ли создаваться со статусом merged
-		//	AssignedReviewers: prDTO.AssignedReviewers, //TODO: разобраться с тем как назначаются ревьюеры
+		Status: entity.OPEN,
 	}
 
 	prc, err := pc.prRepo.Create(ctx, &pr)
-
 	if err != nil {
-		log.Fatal("user service failed: ", err)
+		return dto.PullRequestDTO{}, err
 	}
 
-	asr := make([]dto.UserDTO, 0)
+	reviewers, err := pc.assignReviewers(ctx, user.Id, user.TeamName)
+	if err != nil {
+		return dto.PullRequestDTO{}, err
+	}
 
-	for _, reviewer := range prc.AssignedReviewers {
-		revDto := dto.UserDTO{
-			UserId:   string(rune(reviewer.Id)),
-			Username: reviewer.Username,
-			TeamName: reviewer.TeamName,
-			IsActive: reviewer.IsActive,
-		}
-		asr = append(asr, revDto)
+	prc.AssignedReviewers = reviewers
+	prc, err = pc.prRepo.Update(ctx, prc)
+	if err != nil {
+		return dto.PullRequestDTO{}, err
+	}
+
+	reviewerIds := make([]string, len(prc.AssignedReviewers))
+	for i, reviewer := range prc.AssignedReviewers {
+		reviewerIds[i] = reviewer.Id
 	}
 
 	resDto := dto.PullRequestDTO{
-		PullRequestId:     string(rune(prc.Id)),
+		PullRequestId:     prc.Id,
 		PullRequestName:   prc.PullRequestName,
-		AuthorId:          string(rune(prc.AuthorId.Id)), //TODO: посмотреть переименовать authorid т.к. это объект а не айди
-		Status:            dto.Status(prc.Status),
-		AssignedReviewers: asr,
+		AuthorId:          prc.AuthorId.Id,
+		Status:            dto.ConvertStatusToString(prc.Status),
+		AssignedReviewers: reviewerIds,
 	}
 
-	return resDto
+	return resDto, nil
 }
 
-func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) dto.PullRequestDTO {
+func (pc PullRequestUsecase) assignReviewers(ctx context.Context, authorId string, teamName string) ([]entity.User, error) {
+	candidates, err := pc.userRepo.GetActiveMembersByTeamName(ctx, teamName)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredCandidates := make([]entity.User, 0)
+	for _, candidate := range candidates {
+		if candidate.Id != authorId {
+			filteredCandidates = append(filteredCandidates, candidate)
+		}
+	}
+
+	reviewers := make([]entity.User, 0)
+	maxReviewers := 2
+	if len(filteredCandidates) < maxReviewers {
+		maxReviewers = len(filteredCandidates)
+	}
+
+	// Shuffle candidates and select first maxReviewers
+	for i := range filteredCandidates {
+		j := rand.Intn(i + 1)
+		filteredCandidates[i], filteredCandidates[j] = filteredCandidates[j], filteredCandidates[i]
+	}
+
+	for i := 0; i < maxReviewers; i++ {
+		reviewers = append(reviewers, filteredCandidates[i])
+	}
+
+	return reviewers, nil
+}
+
+func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	reassign, err := pc.prRepo.Reassign(ctx, prDTO.OldUserId, prDTO.NewUserId, prDTO.PrId)
+	pr, err := pc.prRepo.GetByID(ctx, prDTO.PullRequestId)
 	if err != nil {
-		return dto.PullRequestDTO{}
+		return nil, errors.New("PR_NOT_FOUND")
 	}
 
-	if err != nil {
-		log.Fatal("user service failed: ", err)
+	if pr.Status == entity.MERGED {
+		return nil, errors.New("PR_MERGED")
 	}
 
-	asr := make([]dto.UserDTO, 0)
-
-	for _, reviewer := range reassign.AssignedReviewers {
-		revDto := dto.UserDTO{
-			UserId:   string(rune(reviewer.Id)),
-			Username: reviewer.Username,
-			TeamName: reviewer.TeamName,
-			IsActive: reviewer.IsActive,
+	oldUserId := prDTO.OldUserId
+	found := false
+	for _, reviewer := range pr.AssignedReviewers {
+		if reviewer.Id == oldUserId {
+			found = true
+			break
 		}
-		asr = append(asr, revDto)
+	}
+	if !found {
+		return nil, errors.New("REVIEWER_NOT_ASSIGNED")
+	}
+
+	oldReviewer, err := pc.userRepo.GetUserById(ctx, oldUserId)
+	if err != nil {
+		return nil, errors.New("REVIEWER_NOT_ASSIGNED")
+	}
+
+	candidates, err := pc.userRepo.GetActiveMembersByTeamName(ctx, oldReviewer.TeamName)
+	if err != nil {
+		return nil, errors.New("NO_CANDIDATE")
+	}
+
+	filteredCandidates := make([]entity.User, 0)
+	for _, candidate := range candidates {
+		if candidate.Id != pr.AuthorId.Id && candidate.Id != oldUserId {
+			filteredCandidates = append(filteredCandidates, candidate)
+		}
+	}
+
+	if len(filteredCandidates) == 0 {
+		return nil, errors.New("NO_CANDIDATE")
+	}
+
+	newReviewer := filteredCandidates[rand.Intn(len(filteredCandidates))]
+
+	updatedReviewers := make([]entity.User, len(pr.AssignedReviewers))
+	copy(updatedReviewers, pr.AssignedReviewers)
+	replaced := false
+	for i, reviewer := range updatedReviewers {
+		if reviewer.Id == oldUserId && !replaced {
+			updatedReviewers[i] = newReviewer
+			replaced = true
+			break
+		}
+	}
+
+	pr.AssignedReviewers = updatedReviewers
+	updatedPr, err := pc.prRepo.Update(ctx, pr)
+	if err != nil {
+		return nil, err
+	}
+
+	reviewerIds := make([]string, len(updatedPr.AssignedReviewers))
+	for i, reviewer := range updatedPr.AssignedReviewers {
+		reviewerIds[i] = reviewer.Id
 	}
 
 	resDto := dto.PullRequestDTO{
-		PullRequestId:     string(rune(reassign.Id)),
-		PullRequestName:   reassign.PullRequestName,
-		AuthorId:          string(rune(reassign.AuthorId.Id)), //TODO: посмотреть переименовать authorid т.к. это объект а не айди
-		Status:            dto.Status(reassign.Status),
-		AssignedReviewers: asr,
+		PullRequestId:     updatedPr.Id,
+		PullRequestName:   updatedPr.PullRequestName,
+		AuthorId:          updatedPr.AuthorId.Id,
+		Status:            dto.ConvertStatusToString(updatedPr.Status),
+		AssignedReviewers: reviewerIds,
 	}
 
-	return resDto
+	return gin.H{
+		"pr":          resDto,
+		"replaced_by": newReviewer.Id,
+	}, nil
 }
 
-func (pc PullRequestUsecase) Merge(prDTO dto.PullRequestDTO) dto.PullRequestDTO {
+func (pc PullRequestUsecase) Merge(prDTO dto.PullRequestDTO) (dto.PullRequestDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	id, err := strconv.Atoi(prDTO.Id)
+	pr, err := pc.prRepo.GetByID(ctx, prDTO.PullRequestId)
+	if err != nil {
+		return dto.PullRequestDTO{}, errors.New("PR_NOT_FOUND")
+	}
 
-	merged, err := pc.prRepo.MarkAsMerged(ctx, id)
-
-	asr := make([]dto.UserDTO, 0)
-
-	for _, reviewer := range merged.AssignedReviewers {
-		revDto := dto.UserDTO{
-			UserId:   string(rune(reviewer.Id)),
-			Username: reviewer.Username,
-			TeamName: reviewer.TeamName,
-			IsActive: reviewer.IsActive,
+	if pr.Status == entity.MERGED {
+		reviewerIds := make([]string, len(pr.AssignedReviewers))
+		for i, reviewer := range pr.AssignedReviewers {
+			reviewerIds[i] = reviewer.Id
 		}
-		asr = append(asr, revDto)
+
+		return dto.PullRequestDTO{
+			PullRequestId:     pr.Id,
+			PullRequestName:   pr.PullRequestName,
+			AuthorId:          pr.AuthorId.Id,
+			Status:            dto.ConvertStatusToString(pr.Status),
+			AssignedReviewers: reviewerIds,
+			MergedAt:          time.Now().Format(time.RFC3339),
+		}, nil
+	}
+
+	merged, err := pc.prRepo.MarkAsMerged(ctx, pr.Id)
+	if err != nil {
+		return dto.PullRequestDTO{}, err
+	}
+
+	reviewerIds := make([]string, len(merged.AssignedReviewers))
+	for i, reviewer := range merged.AssignedReviewers {
+		reviewerIds[i] = reviewer.Id
 	}
 
 	resDto := dto.PullRequestDTO{
-		PullRequestId:     string(rune(merged.Id)),
+		PullRequestId:     merged.Id,
 		PullRequestName:   merged.PullRequestName,
-		AuthorId:          string(rune(merged.AuthorId.Id)), //TODO: посмотреть переименовать authorid т.к. это объект а не айди
-		Status:            dto.Status(merged.Status),
-		AssignedReviewers: asr,
+		AuthorId:          merged.AuthorId.Id,
+		Status:            dto.ConvertStatusToString(merged.Status),
+		AssignedReviewers: reviewerIds,
+		MergedAt:          time.Now().Format(time.RFC3339),
 	}
 
-	if err != nil {
-		return dto.PullRequestDTO{}
-	}
-
-	return resDto
-
+	return resDto, nil
 }

@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"avito-intern-test-task-2025/internal/http/dto"
+	"avito-intern-test-task-2025/internal/http/errors"
 	"avito-intern-test-task-2025/internal/http/queries"
 	"avito-intern-test-task-2025/internal/usecase"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type TeamHandler struct {
@@ -20,17 +22,18 @@ func NewTeamHandler(teamHandler *usecase.TeamUsecase) *TeamHandler {
 
 func (th TeamHandler) TeamGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !c.Request.URL.Query().Has("team_name") {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "missing required param team_name",
-			})
+		var q queries.TeamNameQuery
+		if err := c.ShouldBindQuery(&q); err != nil {
+			errors.RespondWithError(c, http.StatusBadRequest, errors.InvalidInputError("Invalid query parameters: "+err.Error()))
 			return
 		}
-		var q queries.TeamNameQuery
-		c.ShouldBindQuery(&q)
 
-		r := th.service.GetTeamMembersByName(&q)
-		c.JSON(http.StatusOK, r)
+		r, err := th.service.GetTeamMembersByName(&q)
+		if err != nil {
+			errors.RespondWithError(c, http.StatusNotFound, errors.NotFoundError("Team not found"))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"team": r})
 	}
 }
 
@@ -38,13 +41,15 @@ func (th TeamHandler) TeamAdd() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var td dto.TeamDTO
 		if err := c.BindJSON(&td); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
-			})
+			errors.RespondWithError(c, http.StatusBadRequest, errors.InvalidInputError("Invalid JSON: "+err.Error()))
 			return
 		}
 
-		r := th.service.AddTeam(td)
-		c.JSON(http.StatusOK, r)
+		r, err := th.service.AddTeam(td)
+		if err != nil {
+			errors.RespondWithError(c, http.StatusBadRequest, errors.TeamExistsError("Team already exists"))
+			return
+		}
+		c.JSON(http.StatusCreated, gin.H{"team": r})
 	}
 }

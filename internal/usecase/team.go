@@ -6,8 +6,7 @@ import (
 	"avito-intern-test-task-2025/internal/http/dto"
 	"avito-intern-test-task-2025/internal/http/queries"
 	"context"
-	"log"
-	"strconv"
+	"fmt"
 	"time"
 )
 
@@ -23,20 +22,24 @@ func NewTeamUsecase(tr *repo.TeamRepo, ur *repo.UserRepo) *TeamUsecase {
 	}
 }
 
-func (tc TeamUsecase) GetTeamMembersByName(query *queries.TeamNameQuery) dto.TeamDTO {
+func (tc TeamUsecase) GetTeamMembersByName(query *queries.TeamNameQuery) (dto.TeamDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	users, err := tc.userRepo.GetMembersByTeamName(ctx, query.TeamName)
-
+	_, err := tc.teamRepo.GetTeamByName(ctx, query.TeamName)
 	if err != nil {
-		log.Fatal("user service failed: ", err)
+		return dto.TeamDTO{}, fmt.Errorf("team not found")
+	}
+
+	users, err := tc.userRepo.GetMembersByTeamName(ctx, query.TeamName)
+	if err != nil {
+		return dto.TeamDTO{}, err
 	}
 
 	udto := make([]dto.TeamMemberDTO, 0)
 	for _, u := range users {
 		member := dto.TeamMemberDTO{
-			UserId:   string(rune(u.Id)),
+			UserId:   u.Id,
 			Username: u.Username,
 			IsActive: u.IsActive,
 		}
@@ -44,47 +47,42 @@ func (tc TeamUsecase) GetTeamMembersByName(query *queries.TeamNameQuery) dto.Tea
 	}
 
 	return dto.TeamDTO{
-		Name:    query.TeamName,
-		Members: udto,
-	}
+		TeamName: query.TeamName,
+		Members:  udto,
+	}, nil
 }
 
-func (tc TeamUsecase) AddTeam(teamDTO dto.TeamDTO) dto.TeamDTO {
+func (tc TeamUsecase) AddTeam(teamDTO dto.TeamDTO) (dto.TeamDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	members := make([]entity.User, 0)
 
 	for _, member := range teamDTO.Members {
-
-		id, err := strconv.Atoi("member.UserId")
-		if err != nil {
-			log.Fatal("error during conv")
-		}
-
 		user := entity.User{
-			Id:       id,
+			Id:       member.UserId,
 			Username: member.Username,
+			IsActive: member.IsActive,
+			TeamName: teamDTO.TeamName,
 		}
 
 		members = append(members, user)
 	}
 
 	team := entity.Team{
-		Name:    teamDTO.Name,
+		Name:    teamDTO.TeamName,
 		Members: members,
 	}
 	t, err := tc.teamRepo.CreateTeam(ctx, &team)
-
 	if err != nil {
-		log.Fatal("user service failed: ", err)
+		return dto.TeamDTO{}, err
 	}
 
 	membersDto := make([]dto.TeamMemberDTO, 0)
 
 	for _, member := range t.Members {
 		user := dto.TeamMemberDTO{
-			UserId:   string(rune(member.Id)),
+			UserId:   member.Id,
 			Username: member.Username,
 			IsActive: member.IsActive,
 		}
@@ -93,7 +91,7 @@ func (tc TeamUsecase) AddTeam(teamDTO dto.TeamDTO) dto.TeamDTO {
 	}
 
 	return dto.TeamDTO{
-		Name:    t.Name,
-		Members: membersDto,
-	}
+		TeamName: t.Name,
+		Members:  membersDto,
+	}, nil
 }

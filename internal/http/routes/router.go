@@ -6,20 +6,20 @@ import (
 )
 
 func RegisterPullRequestRoutes(r *gin.Engine, handler *handlers.PrHandler) {
-	teamRoutes := r.Group("pullrequests/")
-	teamRoutes.POST("/merge", handlers.PullRequestsMerge())
-	teamRoutes.POST("/create", handlers.PullRequestsCreate())
-	teamRoutes.POST("/reassign", handlers.PullRequestsReassign())
+	prRoutes := r.Group("/pullRequest")
+	prRoutes.POST("/merge", handler.PullRequestsMerge())
+	prRoutes.POST("/create", handler.PullRequestsCreate())
+	prRoutes.POST("/reassign", handler.PullRequestsReassign())
 }
 
 func RegisterTeamRoutes(r *gin.Engine, handler *handlers.TeamHandler) {
-	teamRoutes := r.Group("team/")
-	teamRoutes.GET("/get", handlers.TeamGet())
-	teamRoutes.POST("/add", handlers.TeamAdd())
+	teamRoutes := r.Group("/team")
+	teamRoutes.GET("/get", handler.TeamGet())
+	teamRoutes.POST("/add", handler.TeamAdd())
 }
 
 func RegisterUserRoutes(r *gin.Engine, handler *handlers.UserHandler) {
-	userRoutes := r.Group("users/")
-	userRoutes.POST("setIsActive", handler.UserSetIsActive())
-	userRoutes.GET("getReview", handlers.UserGetReview())
+	userRoutes := r.Group("/users")
+	userRoutes.POST("/setIsActive", handler.UserSetIsActive())
+	userRoutes.GET("/getReview", handler.UserGetReview())
 }
