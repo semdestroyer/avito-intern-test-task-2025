@@ -53,3 +53,21 @@ func (th TeamHandler) TeamAdd() gin.HandlerFunc {
 		c.JSON(http.StatusCreated, gin.H{"team": r})
 	}
 }
+
+func (th TeamHandler) TeamBulkDeactivate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var payload dto.TeamBulkDeactivateDTO
+		if err := c.ShouldBindJSON(&payload); err != nil {
+			errors.RespondWithError(c, http.StatusBadRequest, errors.InvalidInputError("Invalid JSON: "+err.Error()))
+			return
+		}
+
+		result, err := th.service.BulkDeactivate(payload)
+		if err != nil {
+			errors.RespondWithError(c, http.StatusBadRequest, errors.InvalidInputError(err.Error()))
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"result": result})
+	}
+}

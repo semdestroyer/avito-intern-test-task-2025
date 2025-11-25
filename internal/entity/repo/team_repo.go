@@ -40,7 +40,7 @@ func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.T
 			Where(sq.Eq{"team_name": team.Name}).
 			Where(sq.Eq{"user_id": userIds}).
 			PlaceholderFormat(sq.Dollar)
-		
+
 		sql, args, err := query.ToSql()
 		if err != nil {
 			return nil, err
@@ -110,7 +110,7 @@ func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.T
 			Where(sq.Eq{"user_id": member.Id}).
 			Suffix("RETURNING user_id, is_active, username, team_name").
 			PlaceholderFormat(sq.Dollar)
-		
+
 		updateSql, updateArgs, err := updateQuery.ToSql()
 		if err != nil {
 			return nil, err
@@ -133,7 +133,7 @@ func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.T
 					Values(member.Id, member.Username, member.IsActive, team.Name).
 					Suffix("RETURNING user_id, is_active, username, team_name").
 					PlaceholderFormat(sq.Dollar)
-				
+
 				insertSql, insertArgs, err := insertQuery.ToSql()
 				if err != nil {
 					return nil, err

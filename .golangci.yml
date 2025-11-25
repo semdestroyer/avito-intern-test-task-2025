@@ -1,0 +1,28 @@
+version: "2"
+
+run:
+  timeout: 2m
+  tests: true
+
+linters:
+  enable:
+    - govet
+    - revive
+    - ineffassign
+    - errcheck
+    - staticcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  formats:
+    text:
+      path: stdout
+      colors: true

@@ -120,13 +120,25 @@ func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) (interfa
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	resDto, replacedBy, err := pc.reassignWithContext(ctx, prDTO)
+	if err != nil {
+		return nil, err
+	}
+
+	return gin.H{
+		"pr":          resDto,
+		"replaced_by": replacedBy,
+	}, nil
+}
+
+func (pc PullRequestUsecase) reassignWithContext(ctx context.Context, prDTO dto.PullRequestReassignDTO) (dto.PullRequestDTO, string, error) {
 	pr, err := pc.prRepo.GetByID(ctx, prDTO.PullRequestId)
 	if err != nil {
-		return nil, errors.New("PR_NOT_FOUND")
+		return dto.PullRequestDTO{}, "", errors.New("PR_NOT_FOUND")
 	}
 
 	if pr.Status == entity.MERGED {
-		return nil, errors.New("PR_MERGED")
+		return dto.PullRequestDTO{}, "", errors.New("PR_MERGED")
 	}
 
 	oldUserId := prDTO.OldUserId
@@ -138,17 +150,17 @@ func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) (interfa
 		}
 	}
 	if !found {
-		return nil, errors.New("REVIEWER_NOT_ASSIGNED")
+		return dto.PullRequestDTO{}, "", errors.New("REVIEWER_NOT_ASSIGNED")
 	}
 
 	oldReviewer, err := pc.userRepo.GetUserById(ctx, oldUserId)
 	if err != nil {
-		return nil, errors.New("REVIEWER_NOT_ASSIGNED")
+		return dto.PullRequestDTO{}, "", errors.New("REVIEWER_NOT_ASSIGNED")
 	}
 
 	candidates, err := pc.userRepo.GetActiveMembersByTeamName(ctx, oldReviewer.TeamName)
 	if err != nil {
-		return nil, errors.New("NO_CANDIDATE")
+		return dto.PullRequestDTO{}, "", errors.New("NO_CANDIDATE")
 	}
 
 	filteredCandidates := make([]entity.User, 0)
@@ -159,7 +171,7 @@ func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) (interfa
 	}
 
 	if len(filteredCandidates) == 0 {
-		return nil, errors.New("NO_CANDIDATE")
+		return dto.PullRequestDTO{}, "", errors.New("NO_CANDIDATE")
 	}
 
 	newReviewer := filteredCandidates[rand.Intn(len(filteredCandidates))]
@@ -178,7 +190,7 @@ func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) (interfa
 	pr.AssignedReviewers = updatedReviewers
 	updatedPr, err := pc.prRepo.Update(ctx, pr)
 	if err != nil {
-		return nil, err
+		return dto.PullRequestDTO{}, "", err
 	}
 
 	reviewerIds := make([]string, len(updatedPr.AssignedReviewers))
@@ -194,10 +206,7 @@ func (pc PullRequestUsecase) Reassign(prDTO dto.PullRequestReassignDTO) (interfa
 		AssignedReviewers: reviewerIds,
 	}
 
-	return gin.H{
-		"pr":          resDto,
-		"replaced_by": newReviewer.Id,
-	}, nil
+	return resDto, newReviewer.Id, nil
 }
 
 func (pc PullRequestUsecase) Merge(prDTO dto.PullRequestDTO) (dto.PullRequestDTO, error) {

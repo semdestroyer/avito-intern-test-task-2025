@@ -156,3 +156,42 @@ func (r *UserRepo) GetUserById(ctx context.Context, id string) (*entity.User, er
 
 	return &user, nil
 }
+
+func (r *UserRepo) BulkSetInactiveByTeam(ctx context.Context, teamName string, userIds []string) ([]entity.User, error) {
+	if len(userIds) == 0 {
+		return nil, fmt.Errorf("no users provided for deactivation")
+	}
+
+	updateQuery := sq.Update("users").
+		Set("is_active", false).
+		Where(sq.Eq{"team_name": teamName}).
+		Where(sq.Eq{"user_id": userIds}).
+		Suffix("RETURNING user_id, username, is_active, team_name").
+		PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := updateQuery.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var updated []entity.User
+	for rows.Next() {
+		var user entity.User
+		if err := rows.Scan(&user.Id, &user.Username, &user.IsActive, &user.TeamName); err != nil {
+			return nil, err
+		}
+		updated = append(updated, user)
+	}
+
+	if len(updated) == 0 {
+		return nil, fmt.Errorf("no users updated")
+	}
+
+	return updated, nil
+}

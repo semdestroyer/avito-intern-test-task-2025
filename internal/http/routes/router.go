@@ -2,6 +2,7 @@ package router
 
 import (
 	"avito-intern-test-task-2025/internal/http/handlers"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,10 +17,16 @@ func RegisterTeamRoutes(r *gin.RouterGroup, handler *handlers.TeamHandler) {
 	teamRoutes := r.Group("/team")
 	teamRoutes.GET("/get", handler.TeamGet())
 	teamRoutes.POST("/add", handler.TeamAdd())
+	teamRoutes.POST("/bulkDeactivate", handler.TeamBulkDeactivate())
 }
 
 func RegisterUserRoutes(r *gin.RouterGroup, handler *handlers.UserHandler) {
 	userRoutes := r.Group("/users")
 	userRoutes.POST("/setIsActive", handler.UserSetIsActive())
 	userRoutes.GET("/getReview", handler.UserGetReview())
+}
+
+func RegisterStatsRoutes(r *gin.RouterGroup, handler *handlers.StatsHandler) {
+	statsRoutes := r.Group("/stats")
+	statsRoutes.GET("/assignments", handler.GetAssignmentsStats())
 }

@@ -15,6 +15,11 @@ type PrRepo struct {
 	userRepo *UserRepo
 }
 
+type AssignmentCount struct {
+	ID    string
+	Count int
+}
+
 func NewPrRepo(db *db.DB, userRepo *UserRepo) *PrRepo {
 	return &PrRepo{
 		db:       db,
@@ -74,9 +79,10 @@ func (r *PrRepo) GetPRsByUser(ctx context.Context, userId string) ([]entity.Pull
 		pr.AuthorId = *author
 
 		// Convert status string to enum
-		if statusStr == "OPENED" {
+		switch statusStr {
+		case "OPENED":
 			pr.Status = entity.OPEN
-		} else if statusStr == "MERGED" {
+		case "MERGED":
 			pr.Status = entity.MERGED
 		}
 
@@ -194,9 +200,10 @@ func (r *PrRepo) GetByID(ctx context.Context, id string) (*entity.PullRequest, e
 	pr.AuthorId = *author
 
 	// Convert status string to enum
-	if statusStr == "OPENED" {
+	switch statusStr {
+	case "OPENED":
 		pr.Status = entity.OPEN
-	} else if statusStr == "MERGED" {
+	case "MERGED":
 		pr.Status = entity.MERGED
 	}
 
@@ -304,4 +311,62 @@ func (r *PrRepo) Create(ctx context.Context, pr *entity.PullRequest) (*entity.Pu
 	}
 
 	return createdPr, nil
+}
+
+func (r *PrRepo) GetUserAssignmentCounts(ctx context.Context) ([]AssignmentCount, error) {
+	query := sq.Select("reviewer_id, COUNT(*)").
+		From("assigned_reviewers").
+		GroupBy("reviewer_id").
+		PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var counts []AssignmentCount
+	for rows.Next() {
+		var c AssignmentCount
+		if err := rows.Scan(&c.ID, &c.Count); err != nil {
+			return nil, err
+		}
+		counts = append(counts, c)
+	}
+
+	return counts, nil
+}
+
+func (r *PrRepo) GetPullRequestAssignmentCounts(ctx context.Context) ([]AssignmentCount, error) {
+	query := sq.Select("pull_request_id, COUNT(*)").
+		From("assigned_reviewers").
+		GroupBy("pull_request_id").
+		PlaceholderFormat(sq.Dollar)
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var counts []AssignmentCount
+	for rows.Next() {
+		var c AssignmentCount
+		if err := rows.Scan(&c.ID, &c.Count); err != nil {
+			return nil, err
+		}
+		counts = append(counts, c)
+	}
+
+	return counts, nil
 }

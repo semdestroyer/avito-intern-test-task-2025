@@ -11,14 +11,18 @@ import (
 )
 
 type TeamUsecase struct {
-	teamRepo *repo.TeamRepo
-	userRepo *repo.UserRepo
+	teamRepo  *repo.TeamRepo
+	userRepo  *repo.UserRepo
+	prRepo    *repo.PrRepo
+	prUsecase *PullRequestUsecase
 }
 
-func NewTeamUsecase(tr *repo.TeamRepo, ur *repo.UserRepo) *TeamUsecase {
+func NewTeamUsecase(tr *repo.TeamRepo, ur *repo.UserRepo, pr *repo.PrRepo, pc *PullRequestUsecase) *TeamUsecase {
 	return &TeamUsecase{
-		teamRepo: tr,
-		userRepo: ur,
+		teamRepo:  tr,
+		userRepo:  ur,
+		prRepo:    pr,
+		prUsecase: pc,
 	}
 }
 
@@ -93,5 +97,60 @@ func (tc TeamUsecase) AddTeam(teamDTO dto.TeamDTO) (dto.TeamDTO, error) {
 	return dto.TeamDTO{
 		TeamName: t.Name,
 		Members:  membersDto,
+	}, nil
+}
+
+func (tc TeamUsecase) BulkDeactivate(teamDTO dto.TeamBulkDeactivateDTO) (dto.BulkDeactivateResultDTO, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if teamDTO.TeamName == "" {
+		return dto.BulkDeactivateResultDTO{}, fmt.Errorf("team_name is required")
+	}
+
+	if len(teamDTO.UserIds) == 0 {
+		return dto.BulkDeactivateResultDTO{}, fmt.Errorf("user_ids is required")
+	}
+
+	_, err := tc.teamRepo.GetTeamByName(ctx, teamDTO.TeamName)
+	if err != nil {
+		return dto.BulkDeactivateResultDTO{}, fmt.Errorf("team not found")
+	}
+
+	_, err = tc.userRepo.BulkSetInactiveByTeam(ctx, teamDTO.TeamName, teamDTO.UserIds)
+	if err != nil {
+		return dto.BulkDeactivateResultDTO{}, err
+	}
+
+	reassignments := make([]dto.BulkReassignmentDTO, 0)
+	for _, userId := range teamDTO.UserIds {
+		prs, err := tc.prRepo.GetPRsByUser(ctx, userId)
+		if err != nil {
+			continue
+		}
+		for _, pr := range prs {
+			if pr.Status == entity.MERGED {
+				continue
+			}
+			assignDTO := dto.PullRequestReassignDTO{
+				PullRequestId: pr.Id,
+				OldUserId:     userId,
+			}
+			_, replacedBy, err := tc.prUsecase.reassignWithContext(ctx, assignDTO)
+			if err != nil {
+				continue
+			}
+			reassignments = append(reassignments, dto.BulkReassignmentDTO{
+				PullRequestId: pr.Id,
+				ReplacedUser:  userId,
+				NewReviewer:   replacedBy,
+			})
+		}
+	}
+
+	return dto.BulkDeactivateResultDTO{
+		TeamName:      teamDTO.TeamName,
+		Deactivated:   teamDTO.UserIds,
+		Reassignments: reassignments,
 	}, nil
 }

@@ -9,9 +9,10 @@ import (
 	"avito-intern-test-task-2025/pkg/ServiceDependencies"
 	"avito-intern-test-task-2025/pkg/db"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"os"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Run() {
@@ -32,15 +33,18 @@ func Run() {
 	ur := repo.NewUserRepo(s.DB)
 	pr := repo.NewPrRepo(s.DB, ur)
 	uc := usecase.NewUserUsecase(ur, pr)
-	tc := usecase.NewTeamUsecase(tr, ur)
 	pc := usecase.NewPullRequestUsecase(ur, pr)
+	tc := usecase.NewTeamUsecase(tr, ur, pr, pc)
+	sc := usecase.NewStatsUsecase(pr)
 	uh := handlers.NewUserHandler(uc)
 	th := handlers.NewTeamHandler(tc)
 	ph := handlers.NewPrHandler(pc)
+	sh := handlers.NewStatsHandler(sc)
 
 	router.RegisterUserRoutes(api, uh)
 	router.RegisterTeamRoutes(api, th)
 	router.RegisterPullRequestRoutes(api, ph)
+	router.RegisterStatsRoutes(api, sh)
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {
