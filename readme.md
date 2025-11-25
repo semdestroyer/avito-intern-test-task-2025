@@ -8,13 +8,21 @@
 Роуты задания:
 
 /v1/api/team/add
+
 /v1/api/team/get
+
 /v1/api/users/setIsActive
+
 /v1/api/users/getReview
+
 /v1/api/pullRequest/create
+
 /v1/api/pullRequest/merge
+
 /v1/api/pullRequest/reassign
+
 /v1/api/stats/assignments
+
 /v1/api/team/bulkDeactivate
 
 /v1/api/health - вспомогательный роут, чтобы понять, что бэк поднят
