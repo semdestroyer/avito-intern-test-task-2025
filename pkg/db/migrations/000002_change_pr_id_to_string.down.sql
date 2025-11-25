@@ -1,4 +1,3 @@
--- Down migration to change pull request ID back to integer
 ALTER TABLE assigned_reviewers DROP CONSTRAINT assigned_reviewers_pull_request_id_fkey;
 ALTER TABLE pull_requests DROP CONSTRAINT pull_requests_pkey;
 ALTER TABLE pull_requests ALTER COLUMN id TYPE INTEGER USING id::INTEGER;

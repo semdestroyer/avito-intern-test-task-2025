@@ -26,6 +26,55 @@ func (tr TeamRepo) CreateTeam(ctx context.Context, team *entity.Team) (*entity.T
 	_, err := tr.GetTeamByName(ctx, team.Name)
 	teamExists := err == nil
 
+	// If team exists and no members provided, return error
+	if teamExists && len(team.Members) == 0 {
+		return nil, fmt.Errorf("team already exists")
+	}
+
+	// If team exists, check if all members are already in this team
+	if teamExists && len(team.Members) > 0 {
+		userIds := getUserIds(team.Members)
+		// Build query with IN clause for array of user IDs
+		query := sq.Select("user_id").
+			From("users").
+			Where(sq.Eq{"team_name": team.Name}).
+			Where(sq.Eq{"user_id": userIds}).
+			PlaceholderFormat(sq.Dollar)
+		
+		sql, args, err := query.ToSql()
+		if err != nil {
+			return nil, err
+		}
+
+		existingMembers, err := tr.db.Pool.Query(ctx, sql, args...)
+		if err != nil {
+			return nil, err
+		}
+		defer existingMembers.Close()
+
+		existingUserIds := make(map[string]bool)
+		for existingMembers.Next() {
+			var userId string
+			if err := existingMembers.Scan(&userId); err != nil {
+				return nil, err
+			}
+			existingUserIds[userId] = true
+		}
+
+		// Check if all requested members are already in the team
+		allMembersInTeam := true
+		for _, member := range team.Members {
+			if !existingUserIds[member.Id] {
+				allMembersInTeam = false
+				break
+			}
+		}
+
+		if allMembersInTeam {
+			return nil, fmt.Errorf("team already exists")
+		}
+	}
+
 	// If team doesn't exist, create it
 	if !teamExists {
 		query := sq.Insert("teams").Columns("name").Values(team.Name).
@@ -133,4 +182,13 @@ func (tr TeamRepo) GetTeamByName(ctx context.Context, teamName string) (*entity.
 	return &entity.Team{
 		Name: teamName,
 	}, nil
+}
+
+// getUserIds extracts user IDs from a slice of users
+func getUserIds(users []entity.User) []string {
+	ids := make([]string, len(users))
+	for i, user := range users {
+		ids[i] = user.Id
+	}
+	return ids
 }

@@ -5,20 +5,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterPullRequestRoutes(r *gin.Engine, handler *handlers.PrHandler) {
+func RegisterPullRequestRoutes(r *gin.RouterGroup, handler *handlers.PrHandler) {
 	prRoutes := r.Group("/pullRequest")
 	prRoutes.POST("/merge", handler.PullRequestsMerge())
 	prRoutes.POST("/create", handler.PullRequestsCreate())
 	prRoutes.POST("/reassign", handler.PullRequestsReassign())
 }
 
-func RegisterTeamRoutes(r *gin.Engine, handler *handlers.TeamHandler) {
+func RegisterTeamRoutes(r *gin.RouterGroup, handler *handlers.TeamHandler) {
 	teamRoutes := r.Group("/team")
 	teamRoutes.GET("/get", handler.TeamGet())
 	teamRoutes.POST("/add", handler.TeamAdd())
 }
 
-func RegisterUserRoutes(r *gin.Engine, handler *handlers.UserHandler) {
+func RegisterUserRoutes(r *gin.RouterGroup, handler *handlers.UserHandler) {
 	userRoutes := r.Group("/users")
 	userRoutes.POST("/setIsActive", handler.UserSetIsActive())
 	userRoutes.GET("/getReview", handler.UserGetReview())

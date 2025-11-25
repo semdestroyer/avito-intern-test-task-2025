@@ -9,9 +9,9 @@ import (
 	"avito-intern-test-task-2025/pkg/ServiceDependencies"
 	"avito-intern-test-task-2025/pkg/db"
 	"fmt"
-	"log"
-
 	"github.com/gin-gonic/gin"
+	"log"
+	"os"
 )
 
 func Run() {
@@ -38,11 +38,16 @@ func Run() {
 	th := handlers.NewTeamHandler(tc)
 	ph := handlers.NewPrHandler(pc)
 
-	router.RegisterUserRoutes(r, uh)
-	router.RegisterTeamRoutes(r, th)
-	router.RegisterPullRequestRoutes(r, ph)
+	router.RegisterUserRoutes(api, uh)
+	router.RegisterTeamRoutes(api, th)
+	router.RegisterPullRequestRoutes(api, ph)
 
-	err = r.Run()
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	err = r.Run(":" + port)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -12,11 +12,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/health",
+					"raw": "{{base_url}}/api/v1/health",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"v1",
+						"api",
 						"health"
 					]
 				}
@@ -41,11 +43,13 @@
 							"raw": "{\n  \"team_name\": \"payments\",\n  \"members\": [\n    {\n      \"user_id\": \"u1\",\n      \"username\": \"Alice\",\n      \"is_active\": true\n    },\n    {\n      \"user_id\": \"u2\",\n      \"username\": \"Bob\",\n      \"is_active\": true\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/team/add",
+							"raw": "{{base_url}}/api/v1/team/add",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"team",
 								"add"
 							]
@@ -59,11 +63,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/team/get?team_name=backend",
+							"raw": "{{base_url}}/api/v1/team/get?team_name=backend",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"team",
 								"get"
 							],
@@ -97,11 +103,13 @@
 							"raw": "{\n  \"user_id\": \"u2\",\n  \"is_active\": false\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/users/setIsActive",
+							"raw": "{{base_url}}/api/v1/users/setIsActive",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"users",
 								"setIsActive"
 							]
@@ -115,11 +123,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/users/getReview?user_id=u2",
+							"raw": "{{base_url}}/api/v1/users/getReview?user_id=u2",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"users",
 								"getReview"
 							],
@@ -153,11 +163,13 @@
 							"raw": "{\n  \"pull_request_id\": \"pr-2001\",\n  \"pull_request_name\": \"Add search functionality\",\n  \"author_id\": \"u1\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/pullRequest/create",
+							"raw": "{{base_url}}/api/v1/pullRequest/create",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"pullRequest",
 								"create"
 							]
@@ -180,11 +192,13 @@
 							"raw": "{\n  \"pull_request_id\": \"pr-1001\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/pullRequest/merge",
+							"raw": "{{base_url}}/api/v1/pullRequest/merge",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"pullRequest",
 								"merge"
 							]
@@ -207,11 +221,13 @@
 							"raw": "{\n  \"pull_request_id\": \"pr-1001\",\n  \"old_user_id\": \"u2\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/pullRequest/reassign",
+							"raw": "{{base_url}}/api/v1/pullRequest/reassign",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"v1",
+								"api",
 								"pullRequest",
 								"reassign"
 							]

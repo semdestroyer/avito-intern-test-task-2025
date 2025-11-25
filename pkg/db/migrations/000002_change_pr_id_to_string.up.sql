@@ -1,4 +1,3 @@
--- Up migration to change pull request ID from integer to string
 ALTER TABLE assigned_reviewers DROP CONSTRAINT assigned_reviewers_pull_request_id_fkey;
 ALTER TABLE pull_requests DROP CONSTRAINT pull_requests_pkey;
 ALTER TABLE pull_requests ALTER COLUMN id TYPE VARCHAR(50) USING id::VARCHAR(50);
